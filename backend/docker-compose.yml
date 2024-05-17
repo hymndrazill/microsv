@@ -1,0 +1,77 @@
+version: '3'
+services:
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq_log:/var/log/rabbitmq
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: 'admin'
+      RABBITMQ_DEFAULT_PASS: 'admin'
+    networks:
+      - test  
+  mongodb:
+    container_name: mongodb
+    image: mongo:latest
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - test
+
+  api-gateway:
+    restart: always
+    build: ./api-gateway
+    ports:
+      - '4001:4001'
+    depends_on:
+      - rabbitmq
+    networks:
+      - test
+    
+  users-service:
+    restart: always
+    build: ./users-service
+    ports:
+      - '5000:5000'
+    depends_on:
+      - rabbitmq
+      - mongodb
+    networks:
+      - test
+      
+  posts-service:
+    restart: always
+    build: ./posts-service
+    ports:
+      - '7000:7000'
+    depends_on:
+      - rabbitmq
+      - mongodb
+
+    networks:
+      - test
+  comments-service:
+    restart: always
+    build: ./comments-service
+    ports:
+      - '4000:4000'
+    depends_on:
+      - rabbitmq
+      - mongodb
+
+    networks:
+      - test
+volumes:
+  rabbitmq_data:
+  rabbitmq_log:
+  mongodb_data:
+
+networks:
+  test:
+    external: false
